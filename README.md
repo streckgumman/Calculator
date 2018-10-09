@@ -66,12 +66,6 @@ class Calculator {
     // TODO Methods
 
 
-
-
-
-
-
-
     int getPrecedence(String op) {
         if ("+-".contains(op)) {
             return 2;
@@ -79,7 +73,10 @@ class Calculator {
             return 3;
         } else if ("^".contains(op)) {
             return 4;
-        } else {
+        } else if ("(".contains(op)){
+            return 1;
+        }
+        else {
             throw new RuntimeException(OP_NOT_FOUND);
         }
     }
@@ -104,74 +101,129 @@ class Calculator {
 
     // TODO Methods to tokenize
 
-    /*List <String> tokenize(String input){
-        StringBuilder sb = new StringBuilder();
-        Deque<Character> stack = new ArrayDeque<>();
-        //int pushed = 0;
-        for (char s : input.toCharArray()){
-            if (Character.isDigit(s)){
-                stack.push(s);
-                //pushed++;
-            }
-            else if (isOperator(s)){
-                if (!stack.isEmpty())
-                sb.append(stack.pop());
-                sb.append(s);
-                stack.clear();
-            }
-        }
-
-
-    return null;
-    }*/
-
-    List <String> tokenize2(String input){
+    List<String> tokenize(String input) {
         List<String> tokenized = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         String s1 = new String();
         int count = 1;
-        for (char s : removeBlanks(input)){
-            if (count == input.toCharArray().length){ //todo
-                sb.append(s);
-                s1 = sb.toString();
-                tokenized.add(s1);
-                sb =new StringBuilder();
-                count++;
-            }
-            else if (Character.isDigit(s)){
-                sb.append(s);
-                count++;
-            }
-            else if (isOperator(s)){
+        for (char s : removeBlanks(input)) {
+            if (count == removeBlanks(input).length) { //todo
+                if (Character.isDigit(s)) {
+                    sb.append(s);
+                }
                 s1 = sb.toString();
                 tokenized.add(s1);
                 sb = new StringBuilder();
+                count++;
+                if (isOperator(s)) {
+                    sb.append(s);
+                    s1 = sb.toString();
+                    tokenized.add(s1);
+                    sb = new StringBuilder();
+                }
+
+            } else if (Character.isDigit(s)) {
+                sb.append(s);
+                count++;
+            } else if (isOperator(s)) {
+                s1 = sb.toString();
+                if (!s1.isEmpty()) {
+                    tokenized.add(s1);
+                    sb = new StringBuilder();
+                }
                 sb.append(s);
                 s1 = sb.toString();
                 tokenized.add(s1);
-                sb =new StringBuilder();
+                sb = new StringBuilder();
                 count++;
             }
         }
 
-    return tokenized;
+        return tokenized;
 
     }
+
     boolean isOperator(char ch) {
         return "+-*/^()".indexOf(ch) >= 0;
     }
-    char [] removeBlanks(String input){
+
+    boolean isColon(char ch) {
+        return "()".indexOf(ch) >= 0;
+    }
+
+    char[] removeBlanks(String input) {
         int index = 0;
-        char[] newCharArr = new char[input.toCharArray().length + ((input.toCharArray().length)- index)];
-        for (char ch : input.toCharArray()){
-            if (Character.isDigit(ch) || isOperator(ch)){
+        int index2 = 0;
+        StringBuilder sb = new StringBuilder();
+        char[] newCharArr = new char[input.toCharArray().length];
+        for (char ch : input.toCharArray()) {
+            if (Character.isDigit(ch) || isOperator(ch)) {
                 newCharArr[index] = ch;
-                index++; //todo
+                index++;
+                index2++;
             }
         }
-        return newCharArr;
+        while (index > -1) {
+            if (index > 0) {
+                sb.append(newCharArr[index2 - index]);
+                index--;
+            } else {
+                break;
+            }
+
+        }
+
+        String s = sb.toString();
+        char[] trimmed = s.toCharArray();
+        return trimmed;
+    }
+
+    List<String> infix2Postfix(List<String> tokenized) {
+        List<String> postfix = new ArrayList<>();
+        Deque<String> stack = new ArrayDeque<>();
+        for (String s : tokenized) {
+            if (isOperator(s.charAt(0))) {
+                if (String.valueOf(s).equals("(")) { //problem till senare
+                    stack.push(s);
+                } else if (String.valueOf(s).equals(")")) {
+                    for (String st : stack) {
+                        if (stack.pop().equals("(")) { // metod för detta
+                            postfix.add(stack.pop());
+                            break;
+                        } else {
+                            postfix.add(st);
+                        }
+                    }
+                } else {
+                    if (stack.isEmpty()) {
+                        stack.add(s);
+                    }
+                    else if (getPrecedence(stack.peek()) >= getPrecedence(s)) {         //() ==> op not found
+                        postfix.add(stack.pop());
+                        stack.add(s);
+                    } else {
+                        stack.add(s);
+                    }
+                }
+
+            } else {
+                postfix.add(s);
+            }
+
+        }
+        for (String str : stack) {
+            if (!stack.isEmpty()) {
+                if (!isColon(str.charAt(0))) {
+                    postfix.add(stack.pop()); // in i lista och sen ut som reverse?
+                }
+
+            } else {
+                break;
+            }
+        }
+        return postfix;
     }
 
 
-
 }
+
