@@ -1,0 +1,3 @@
+ boolean isOk(char ch){
+        return Character.isDigit(ch) || isOperator(ch);
+    }
