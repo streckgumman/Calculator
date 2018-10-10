@@ -3,6 +3,8 @@ package calc;
 import java.util.*;
 
 import static java.lang.Double.NaN;
+import static java.lang.Double.doubleToLongBits;
+import static java.lang.Double.valueOf;
 import static java.lang.Math.pow;
 
 
@@ -32,10 +34,13 @@ class Calculator {
         if (expr.length() == 0) {
             return NaN;
         }
+        List<String> tokens = tokenize(expr);
+        List<String> postfix = infix2Postfix(tokens);
+        double result = evalPostfix(postfix);
         // TODO List<String> tokens = tokenize(expr);
         // TODO List<String> postfix = infix2Postfix(tokens);
         // TODO double result = evalPostfix(postfix);
-        return 0; // result;
+        return result; // result;
     }
 
     // ------  Evaluate RPN expression -------------------
@@ -75,8 +80,7 @@ class Calculator {
             return 4;
         } else if ("(".contains(op)){
             return 1;
-        }
-        else {
+        } else {
             throw new RuntimeException(OP_NOT_FOUND);
         }
     }
@@ -107,6 +111,9 @@ class Calculator {
         String s1 = new String();
         int count = 1;
         for (char s : removeBlanks(input)) {
+            if (isOkOperand(s)){
+                throw new IllegalArgumentException(MISSING_OPERAND);
+            }
             if (count == removeBlanks(input).length) { //todo
                 if (Character.isDigit(s)) {
                     sb.append(s);
@@ -147,8 +154,28 @@ class Calculator {
         return "+-*/^()".indexOf(ch) >= 0;
     }
 
-    boolean isColon(char ch) {
+    boolean isParen(char ch) {
         return "()".indexOf(ch) >= 0;
+    }
+
+    boolean DoublePower(String operator1, String operator2){
+        if ("^".contains(operator1) && "^".contains(operator2)){
+            return true;
+        }
+        else{
+            return false;
+        }
+
+    }
+    boolean isOkOperand(char ch) {
+        if (Character.isDigit(ch) || isOperator(ch)) {
+            return false;
+        } if (Character.isLetter(ch)){
+            return true;
+        }
+        else {
+            return true;
+        }
     }
 
     char[] removeBlanks(String input) {
@@ -160,9 +187,9 @@ class Calculator {
             if (Character.isDigit(ch) || isOperator(ch)) {
                 newCharArr[index] = ch;
                 index++;
-                index2++;
             }
         }
+        index2 = index;
         while (index > -1) {
             if (index > 0) {
                 sb.append(newCharArr[index2 - index]);
@@ -178,6 +205,8 @@ class Calculator {
         return trimmed;
     }
 
+
+
     List<String> infix2Postfix(List<String> tokenized) {
         List<String> postfix = new ArrayList<>();
         Deque<String> stack = new ArrayDeque<>();
@@ -186,44 +215,74 @@ class Calculator {
                 if (String.valueOf(s).equals("(")) { //problem till senare
                     stack.push(s);
                 } else if (String.valueOf(s).equals(")")) {
-                    for (String st : stack) {
-                        if (stack.pop().equals("(")) { // metod för detta
-                            postfix.add(stack.pop());
+                    while (true) {
+                        if (stack.peek().equals("(")) { // metod för detta
+                            stack.pop();
                             break;
                         } else {
-                            postfix.add(st);
+                            postfix.add(stack.pop());
                         }
                     }
                 } else {
                     if (stack.isEmpty()) {
-                        stack.add(s);
+                        stack.push(s);
                     }
-                    else if (getPrecedence(stack.peek()) >= getPrecedence(s)) {         //() ==> op not found
-                        postfix.add(stack.pop());
-                        stack.add(s);
+                    else if (getPrecedence(stack.peek()) >= getPrecedence(s) && !DoublePower(stack.peek(), s)) {
+                        while (true) {
+                            postfix.add(stack.pop());
+                            if (stack.isEmpty()){
+                                stack.push(s);
+                                break;
+                            }
+
+                        }
+
                     } else {
-                        stack.add(s);
+                        stack.push(s);
                     }
                 }
-
             } else {
                 postfix.add(s);
             }
-
         }
+        //final int postfixLength = postfix.size();
         for (String str : stack) {
             if (!stack.isEmpty()) {
-                if (!isColon(str.charAt(0))) {
-                    postfix.add(stack.pop()); // in i lista och sen ut som reverse?
+                if (!isParen(str.charAt(0))) {
+                    postfix.add(stack.pop());
                 }
 
             } else {
                 break;
             }
         }
+
         return postfix;
     }
 
 
-}
 
+
+    double evalPostfix (List<String> postfix){
+        Deque<String> stack = new ArrayDeque<>();
+        double result = 0;
+        for (String s : postfix){
+            if (isOperator(s.charAt(0))){
+                double stackTop = valueOf(stack.pop());
+                double stackUnder = valueOf((stack.pop()));
+                result= applyOperator(s,  stackTop, stackUnder);
+                stack.push(String.valueOf(result));
+            }else{
+                stack.push(s);
+            }
+        }
+        while (!stack.isEmpty()){
+            result = valueOf(stack.pop());
+        }
+
+        return result;
+    }
+
+
+
+}
