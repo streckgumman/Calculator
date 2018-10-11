@@ -1,3 +1,10 @@
  boolean isOk(char ch){
         return Character.isDigit(ch) || isOperator(ch);
     }
+    System.out.println("======");
+        if (Character.getType(ch) == Character.DECIMAL_DIGIT_NUMBER)
+        {
+            System.out.println("Is a digit");
+        }else if(){
+            
+        }
