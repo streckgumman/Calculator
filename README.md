@@ -1,161 +1,310 @@
 package calc;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
-import static java.lang.System.out;
-
-/**
- * This is a test program for the Calculator (testing a Calculator object)
- * It should output true for everything
- *
- * Right click and run ...
- */
-class Test {
-
-    public static void main(String[] args) {
-        new Test().test();
-    }
-
-    final Calculator calculator = new Calculator();
-
-    void test() {
-
-        // Here you could write your own test for any "small" helper methods
+import static java.lang.Double.NaN;
+import static java.lang.Double.doubleToLongBits;
+import static java.lang.Double.valueOf;
+import static java.lang.Math.pow;
 
 
-
-        // Uncomment line by line to test
-
-        // Tokenization ---------------------------
-        t("1 + 10", "1 + 10");  // Arguments are input and expected output
-        t("1+ 10", "1 + 10");   // Expected is in fact a list [ "1", "+", "10"]
-        t("1 +10", "1 + 10");
-        t("1+10", "1 + 10");
-        t("(1+10) ", "( 1 + 10 )");  // List is [ "(", "1", "+", "10", ")" ]
-        t("2 *( 1+10) ", "2 * ( 1 + 10 )");
-        t("(1 +2) /2 *( 1+10) ", "( 1 + 2 ) / 2 * ( 1 + 10 )");
-
-
-        // Infix to postfix -----------------------
-
-        i2p("1+10", "1 10 +");
-        i2p("1+2+3", "1 2 + 3 +");
-        i2p("1+2-3", "1 2 + 3 -");
-        i2p("3-2-1", "3 2 - 1 -");
-        i2p("1 + 2 * 3", "1 2 3 * +");
-        i2p("1 / 2 + 3", "1 2 / 3 +");
-        i2p("20/4/2", "20 4 / 2 /");
-        i2p("4^3^2", "4 3 2 ^ ^");
-        i2p("4^3*2", "4 3 ^ 2 *");
-        i2p("(1+2)*3", "1 2 + 3 *");
-        i2p("2^(1+1)", "2 1 1 + ^");
-
-
-        //e("((3*3))", 13);
-
-        // Evaluation ------------------------------
-
-        // A value
-        e("123", 123);
-
-        // Basic operations
-        e("1 + 10", 11);
-        e("1 + 0", 1);
-        e("1 - 10", -9);  // Input may not be negative but output may
-        e("10 - 1", 9);
-        e("60 * 10", 600);
-        e("60 * 0", 0);
-        e("3 / 2", 1.5);  // See exception for div by zero
-        e("1 / 2", 0.5);
-        e("2 ^ 4 ", 16);
-        e("2 ^ 0 ", 1);
-
-        // Associativity
-        e("10 - 5 - 2", 3);  // (10-5)-2
-        e("20 / 2 / 2", 5);  // (20/2)/2
-        e("4 ^ 2 ^ 2", 256);  // 4^(2^2)
-
-        // Precedence
-        e("3 * 10 + 2", 32);
-        e("3 + 10 * 2", 23);
-        e("30 / 3 + 2", 12);
-        e("1 + 30 / 3", 11);
-        e("3 * 2 ^ 2", 12);
-        e("3 ^ 2 * 2", 18);
-
-
-        // Parentheses
-        e("10 - (5 - 2)", 7);
-        e("20 / (10 / 2)", 4);
-        e("(3 ^ 2) ^ 2", 81);
-        e("3 * (10 + 2)", 36);
-        e("30 / (3 + 2)", 6);
-        e("(3 + 2) ^ 2", 25);
-        e(" 2 ^ (1 + 1)", 4);
-        e(" ((((1 + 1))) * 2)", 4);
-
-        // Mix priority and right and left associativity
-        e(" 1 ^ 1 ^ 1 ^ 1  - 1", 0);
-        e(" 4 - 2 - 1 ^ 2 ", 1);
 /*
-        // Exceptions -----------------------------------
-        try {
-            e("1 / 0 ", 0);   // 0 just a dummy
-        } catch (IllegalArgumentException e) {
-            out.println(e.getMessage().equals(Calculator.DIV_BY_ZERO));
-        }
-        try {
-            e("1 + 2 + ", 0);
-        } catch (IllegalArgumentException e) {
-            out.println(e.getMessage().equals(Calculator.MISSING_OPERAND));
-        }
-        try {
-            e("12 3", 0);
-        } catch (IllegalArgumentException e) {
-            out.println(e.getMessage().equals(Calculator.MISSING_OPERATOR));
-        }
-        try {
-            e("1 + 2)", 0);
-        } catch (IllegalArgumentException e) {
-            out.println(e.getMessage().equals(Calculator.MISSING_OPERATOR));
-        }
-*/
+ *   A calculator for rather simple arithmetic expressions
+ *
+ *   This is not the program, it's a class declaration (with methods) in it's
+ *   own file (which must be named Calculator.java)
+ *
+ *   NOTE:
+ *   - No negative numbers implemented
+ */
+class Calculator {
 
+    // Here are the only allowed instance variables!
+    // Error messages (more on static later)
+    final static String MISSING_OPERAND = "Missing or bad operand";
+    final static String DIV_BY_ZERO = "Division with 0";
+    final static String MISSING_OPERATOR = "Missing operator or parenthesis";
+    final static String OP_NOT_FOUND = "Operator not found";
+
+    // Definition of operators
+    final static String OPERATORS = "+-*/^";
+
+    // Method used in REPL
+    double eval(String expr) {
+        if (expr.length() == 0) {
+            return NaN;
+        }
+        List<String> tokens = tokenize(expr);
+        List<String> postfix = infix2Postfix(tokens);
+        double result = evalPostfix(postfix);
+        // TODO List<String> tokens = tokenize(expr);
+        // TODO List<String> postfix = infix2Postfix(tokens);
+        // TODO double result = evalPostfix(postfix);
+        return result; // result;
+    }
+
+    // ------  Evaluate RPN expression -------------------
+
+    // TODO Eval methods
+
+    double applyOperator(String op, double d1, double d2) {
+        switch (op) {
+            case "+":
+                return d1 + d2;
+            case "-":
+                return d2 - d1;
+            case "*":
+                return d1 * d2;
+            case "/":
+                if (d1 == 0) {
+                    throw new IllegalArgumentException(DIV_BY_ZERO);
+                }
+                return d2 / d1;
+            case "^":
+                return pow(d2, d1);
+        }
+        throw new RuntimeException(OP_NOT_FOUND);
+    }
+
+    // ------- Infix 2 Postfix ------------------------
+
+    // TODO Methods
+
+
+    int getPrecedence(String op) {
+        if ("+-".contains(op)) {
+            return 2;
+        } else if ("*/".contains(op)) {
+            return 3;
+        } else if ("^".contains(op)) {
+            return 4;
+        } else if ("(".contains(op)){
+            return 1;
+        } else {
+            throw new RuntimeException(OP_NOT_FOUND);
+        }
+    }
+
+    enum Assoc {
+        LEFT,
+        RIGHT
+    }
+
+    Assoc getAssociativity(String op) {
+        if ("+-*/".contains(op)) {
+            return Assoc.LEFT;
+        } else if ("^".contains(op)) {
+            return Assoc.RIGHT;
+        } else {
+            throw new RuntimeException(OP_NOT_FOUND);
+        }
+    }
+
+
+    // ---------- Tokenize -----------------------
+
+    // TODO Methods to tokenize
+
+    List<String> tokenize(String input) {
+        List<String> tokenized = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        String s1;
+        int count = 1;
+        for (char s : removeBlanks(input)) {
+            if (count == removeBlanks(input).length) { //todo
+                if (Character.isDigit(s)) {
+                    sb.append(s);
+                }
+                s1 = sb.toString();                                     //TODO HÄR ÄR FELET - "" läggs in
+                tokenized.add(s1);
+                sb = new StringBuilder();
+                count++;
+                if (isParen(s)) {
+                    sb.append(s);
+                    s1 = sb.toString();
+                    tokenized.add(s1);
+                    sb = new StringBuilder();
+                }
+                if (isOperator(s)){
+                    throw new IllegalArgumentException(MISSING_OPERAND);
+                }
+
+            } else if (Character.isDigit(s)) {
+                sb.append(s);
+                count++;
+            } else if (isOk(s)) {
+                s1 = sb.toString();
+                if (!s1.isEmpty()) {
+                    tokenized.add(s1);
+                    sb = new StringBuilder();
+                }
+                sb.append(s);
+                s1 = sb.toString();
+                tokenized.add(s1);
+                sb = new StringBuilder();
+                count++;
+            }
+        }
+        return tokenized;
+    }
+
+
+
+    boolean isOk(char ch){
+        return isParen(ch) || isOperator(ch);
+    }
+
+    boolean isOperator(char ch) {
+        return "+-*/^".indexOf(ch) >= 0;
+    }
+
+    boolean isParen(char ch) {
+        return "()".indexOf(ch) >= 0;
+    }
+
+    boolean DoublePower(String operator1, String operator2){
+        if ("^".contains(operator1) && "^".contains(operator2)){
+            return true;
+        }
+        else{
+            return false;
+        }
+
+    }
+    boolean isBadOperand(char ch) {
+        if (Character.isDigit(ch) || isOk(ch) || Character.isWhitespace(ch) ) {
+            return false;
+        } if (Character.isLetter(ch)){
+            return true;
+        }
+        else {
+            return true;
+        }
+    }
+
+    boolean checkOp(String input){
+        char[] arr = input.toCharArray();
+        boolean operator = false;
+        for (int i = 1; i < arr.length -1; i++){
+            if (Character.isWhitespace(arr[i]) && Character.isDigit(arr[i-1]) && Character.isDigit(arr[i+1])){
+                operator =  true;
+            }else{
+                operator = false;
+            }
+        }
+        return operator;
+    }
+
+
+    char[] removeBlanks(String input) {
+        int index = 0;
+        int index2;
+        if (checkOp(input)){
+            throw new IllegalArgumentException(MISSING_OPERATOR);
+        }
+        StringBuilder sb = new StringBuilder();
+        char[] newCharArr = new char[input.toCharArray().length];
+        for (char ch : input.toCharArray()) {
+            if (isBadOperand(ch)){
+                throw new RuntimeException(MISSING_OPERAND);
+            }
+            if (Character.isDigit(ch) || isOk(ch)) {
+                newCharArr[index] = ch;
+                index++;
+            }
+        }
+        index2 = index;
+        while (index > -1) {
+            if (index > 0) {
+                sb.append(newCharArr[index2 - index]);
+                index--;
+            } else {
+                break;
+            }
+
+        }
+
+        String s = sb.toString();
+        char[] trimmed = s.toCharArray();   //right until here then the return of trimmed is wrong
+        return trimmed;
+    }
+
+
+
+    List<String> infix2Postfix(List<String> tokenized) {
+        List<String> postfix = new ArrayList<>();
+        Deque<String> stack = new ArrayDeque<>();
+        for (String s : tokenized) {
+            if (isOperator(s.charAt(0))|| isParen(s.charAt(0))) {
+                if (String.valueOf(s).equals("(")) { //problem till senare
+                    stack.push(s);
+                } else if (String.valueOf(s).equals(")")) {
+                    while (true) {
+                        if (stack.peek().equals("(")) { // metod för detta
+                            stack.pop();
+                            break;
+                        } else {
+                            postfix.add(stack.pop());
+                        }
+                    }
+                } else {
+                    if (stack.isEmpty()) {
+                        stack.push(s);
+                    }
+                    else if (getPrecedence(stack.peek()) >= getPrecedence(s) && !DoublePower(stack.peek(), s)) {
+                        while (true) {
+                            postfix.add(stack.pop());
+                            if (stack.isEmpty()){
+                                stack.push(s);
+                                break;
+                            }
+                        }
+                    } else {
+                        stack.push(s);
+                    }
+                }
+            } else {
+                postfix.add(s);
+            }
+        }
+        //final int postfixLength = postfix.size();
+        for (String str : stack) {
+            if (!stack.isEmpty()) {
+                if (!isParen(str.charAt(0))) {
+                    postfix.add(stack.pop());
+                }
+
+            } else {
+                break;
+            }
+        }
+
+        return postfix;
     }
 
 
 
 
+    double evalPostfix (List<String> postfix){
+        Deque<String> stack = new ArrayDeque<>();
+        double result = 0;
+        for (String s : postfix){
+            if (isOperator(s.charAt(0))){
+                double stackTop = valueOf(stack.pop());
+                double stackUnder = valueOf((stack.pop()));
+                result= applyOperator(s,  stackTop, stackUnder);
+                stack.push(String.valueOf(result));
+            }else{
+                stack.push(s);
+            }
+        }
+        while (!stack.isEmpty()){
+            result = valueOf(stack.pop());
+        }
 
-    // ------- Below are helper methods for testing NOTHING to do here -------------------
-
-    // t for tokenize, a very short name, lazy, avoid typing ...
-    void t(String expr, String expected) {
-        List<String> list = calculator.tokenize(expr);
-        String result = String.join(" ", list);
-        out.println(calculator.tokenize(expr));
-        out.println(result.equals(expected));
+        return result;
     }
 
-    // Infix 2 postfix
-    void i2p(String infix, String expected) {
-        List<String> tokens = calculator.tokenize(infix);
-        List<String> postfix = calculator.infix2Postfix(tokens);
-        String result = String.join(" ", postfix);
-        out.println(calculator.infix2Postfix(tokens));
-        out.println(result.equals(expected));
-    }
 
-    // Evaluation
-    void e(String infix, double expected) {
-        List<String> tokens = calculator.tokenize(infix);
-        List<String> postfix = calculator.infix2Postfix(tokens);
-        double result = calculator.evalPostfix(postfix);
-        out.println(calculator.evalPostfix(postfix));
-        out.println(result == expected);
-    }
 
 }
