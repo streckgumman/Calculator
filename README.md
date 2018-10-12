@@ -119,13 +119,13 @@ class Calculator {
                 tokenized.add(s1);
                 sb = new StringBuilder();
                 count++;
-                if (isParen(s)) {
+                if (s == ')') {
                     sb.append(s);
                     s1 = sb.toString();
                     tokenized.add(s1);
                     sb = new StringBuilder();
                 }
-                if (isOperator(s)){
+                else if (isOperator(s) || s == '('){
                     throw new IllegalArgumentException(MISSING_OPERAND);
                 }
 
@@ -243,7 +243,7 @@ class Calculator {
                         if (stack.peek().equals("(")) { // metod för detta
                             stack.pop();
                             break;
-                        } else {
+                        }else {
                             postfix.add(stack.pop());
                         }
                     }
