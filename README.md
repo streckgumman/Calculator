@@ -256,6 +256,10 @@ class Calculator {
                     }
                     else if (getPrecedence(stack.peek()) >= getPrecedence(s) && !DoublePower(stack.peek(), s)) {
                         while (true) {
+                            if (stack.peek().equals("(")){
+                                stack.push(s);
+                                break;
+                            }
                             postfix.add(stack.pop());
                             if (stack.isEmpty()){
                                 stack.push(s);
@@ -291,6 +295,7 @@ class Calculator {
     double evalPostfix (List<String> postfix){
         Deque<String> stack = new ArrayDeque<>();
         double result = 0;
+        double result2 = 0;
         for (String s : postfix){
             if (isOperator(s.charAt(0))){
                 double stackTop = valueOf(stack.pop());
