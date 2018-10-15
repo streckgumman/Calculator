@@ -110,6 +110,9 @@ class Calculator {
         StringBuilder sb = new StringBuilder();
         String s1;
         int count = 1;
+        if (!(checkParentheses(input))){
+            throw new IllegalArgumentException(MISSING_OPERATOR);
+        }
         for (char s : removeBlanks(input)) {
             if (count == removeBlanks(input).length) { //todo
                 if (Character.isDigit(s)) {
@@ -303,6 +306,55 @@ class Calculator {
         }
 
         return result;
+    }
+
+
+
+    boolean checkParentheses(String expr) {
+        Deque<Character> stack = new ArrayDeque<>();
+        for (char ch : expr.toCharArray()) {
+            if (isOpeningParen(ch)) {
+                stack.push(ch);
+            } else if (isClosingParen(ch)) {
+                if (stack.isEmpty()) {
+                    return false;
+                }
+                char t = stack.peek();
+                if (matching(ch) == t) {
+                    stack.pop();
+                } else {
+                    return false;
+                }
+            } else{
+                //skip any other char
+            }
+        }
+        return stack.isEmpty();
+    }
+
+    boolean isOpeningParen(char ch) {
+        return "({[".indexOf(ch) >= 0;
+    }
+
+    boolean isClosingParen(char ch) {
+        return ")}]".indexOf(ch) >= 0;
+    }
+
+
+    // This is interesting because have to return, but what if no match?!?
+    char matching(char ch) {
+        //char c =  must initialize but to what?!
+        switch (ch) {
+            case ')':
+                return '(';  // c = '('
+            case ']':
+                return '[';
+            case '}':
+                return '{';
+            default:
+                // return c;
+                throw new IllegalArgumentException("No match found");
+        }
     }
 
 
